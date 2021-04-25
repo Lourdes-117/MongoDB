@@ -47,12 +47,7 @@ public class UserFolderContoller {
 		userFolderModel.setLastName(lastName);
 		userFolderModel.setEmailID(emailID);
 		userFolderModel.setPhoneNumber(phoneNumber);
-		try {
-			userFolderRepository.save(userFolderModel);
-			return new ResponseEntity<>(userFolderModel, HttpStatus.OK);
-		} catch(Exception exception) {
-			return new ResponseEntity<>(exception.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-		}
+		return saveToRepository(userFolderModel);
 	}
 	
 	@PostMapping("/addFile")
@@ -81,12 +76,7 @@ public class UserFolderContoller {
 				return new ResponseEntity<>("{error: File Already Exists}", HttpStatus.CONFLICT);
 			}
 			userFolder.setFiles(fileModel);
-			try {
-				userFolderRepository.save(userFolder);
-				return new ResponseEntity<>(userFolder, HttpStatus.OK);
-			} catch(Exception exception) {
-				return new ResponseEntity<>(exception.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-			}
+			return saveToRepository(userFolder);
 		} else {
 			for(int index = 0; index < filePathArray.length; index++) {
 				System.out.println(index);
@@ -121,22 +111,10 @@ public class UserFolderContoller {
 				return new ResponseEntity<>("{error: Folder Already Exists}", HttpStatus.CONFLICT);
 			}
 			userFolder.setFolders(folderModel);
-			try {
-				userFolderRepository.save(userFolder);
-				return new ResponseEntity<>(userFolder, HttpStatus.OK);
-			} catch(Exception exception) {
-				return new ResponseEntity<>(exception.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-			}
+			return saveToRepository(userFolder);
 		} else {
 			//Upload In Inner Directory
-			List<FolderModel> folderList = userFolder.getFolders();
-			Optional<FolderModel> folderToSaveAt= Optional.empty();
-			for(int index = 0; index < filePathArray.length-1; index++) {
-				folderToSaveAt = getFolderWithName(filePathArray[index+1], folderList);
-				if(folderToSaveAt.isPresent()) {
-					folderList = folderToSaveAt.get().getFolders();
-				}
-			}
+			Optional<FolderModel> folderToSaveAt = navigatoToPath(filePathArray, userFolder.getFolders());
 			if(!folderToSaveAt.isPresent()) {
 				return new ResponseEntity<>("{error: Folder Path Does Not Exist}", HttpStatus.NOT_FOUND);
 			}
@@ -145,12 +123,28 @@ public class UserFolderContoller {
 				return new ResponseEntity<>("{error: Folder Already Exists}", HttpStatus.CONFLICT);
 			}
 			folderToSaveAtFound.setFolders(folderModel);
-			try {
-				userFolderRepository.save(userFolder);
-				return new ResponseEntity<>(userFolder, HttpStatus.OK);
-			} catch(Exception exception) {
-				return new ResponseEntity<>(exception.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+			return saveToRepository(userFolder);
+		}
+	}
+	
+	private Optional<FolderModel> navigatoToPath(String[] filePathArray, List<FolderModel> homeFolder) {
+		List<FolderModel> folderList = homeFolder;
+		Optional<FolderModel> folderToSaveAt= Optional.empty();
+		for(int index = 0; index < filePathArray.length-1; index++) {
+			folderToSaveAt = getFolderWithName(filePathArray[index+1], folderList);
+			if(folderToSaveAt.isPresent()) {
+				folderList = folderToSaveAt.get().getFolders();
 			}
+		}
+		return folderToSaveAt;
+	}
+
+	private ResponseEntity<?> saveToRepository(UserFolderModel userFolder) {
+		try {
+			userFolderRepository.save(userFolder);
+			return new ResponseEntity<>(userFolder, HttpStatus.OK);
+		} catch(Exception exception) {
+			return new ResponseEntity<>(exception.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 	

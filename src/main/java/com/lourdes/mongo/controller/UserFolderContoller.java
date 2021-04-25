@@ -6,11 +6,9 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -79,6 +77,9 @@ public class UserFolderContoller {
 		
 		//Upload in Home Directory
 		if (filePathArray.length == 1) {
+			if(doesFileExist(fileName, userFolder.getFiles())) {
+				return new ResponseEntity<>("{error: File Already Exists}", HttpStatus.CONFLICT);
+			}
 			userFolder.setFiles(fileModel);
 			try {
 				userFolderRepository.save(userFolder);
@@ -94,9 +95,48 @@ public class UserFolderContoller {
 		}
 		
 		
+		//ToDo- Method to Add Files
+		return new ResponseEntity<>("To Do", HttpStatus.NOT_FOUND);
+	}
+	
+	@PostMapping("/addFolder")
+	public ResponseEntity<?> addFolderToUser(@RequestBody ObjectNode addFileObjectNode) {
+		String userName = addFileObjectNode.get("userName").asText();
+		String folderName = addFileObjectNode.get("folderName").asText();
+		String folderPath = addFileObjectNode.get("folderPath").asText();
+		FolderModel folderModel = new FolderModel();
+		folderModel.setFolderName(folderName);
+		String[] filePathArray = folderPath.split("/");
 		
-		return new ResponseEntity<>("Done", HttpStatus.NOT_FOUND);
+		Optional<UserFolderModel> userFolderOptional = getUserWithName(userName);
+		if (!userFolderOptional.isPresent()) {
+			return new ResponseEntity<>("{error: User Not Found}", HttpStatus.NOT_FOUND);
+		}
 		
+		UserFolderModel userFolder = userFolderOptional.get();
+		
+		//Upload in Home Directory
+		if (filePathArray.length == 1) {
+			if(doesFolderExist(folderName, userFolder.getFolders())) {
+				return new ResponseEntity<>("{error: Folder Already Exists}", HttpStatus.CONFLICT);
+			}
+			userFolder.setFolders(folderModel);
+			try {
+				userFolderRepository.save(userFolder);
+				return new ResponseEntity<>(userFolder, HttpStatus.OK);
+			} catch(Exception exception) {
+				return new ResponseEntity<>(exception.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		} else {
+			for(int index = 0; index < filePathArray.length; index++) {
+				System.out.println(index);
+				System.out.println(filePathArray[index]);
+			}
+		}
+		
+		
+		//ToDo- Method to Add Folder
+		return new ResponseEntity<>("To Do", HttpStatus.NOT_FOUND);
 	}
 	
 	private Optional<UserFolderModel> getUserWithName(String userName) {
@@ -105,6 +145,24 @@ public class UserFolderContoller {
 			return Optional.empty();
 		}
 		return Optional.of(userNameArray.get(0));
+	}
+	
+	private boolean doesFolderExist(String folderName, List<FolderModel> folders) {
+		for (FolderModel folder : folders) {
+			if(folder.getFolderName().equals(folderName)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private boolean doesFileExist(String fileName, List<FilesModel> files) {
+		for (FilesModel file : files) {
+			if(file.getFileName().equals(fileName)) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	@GetMapping("/Users/{userName}")

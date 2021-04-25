@@ -78,15 +78,18 @@ public class UserFolderContoller {
 			userFolder.setFiles(fileModel);
 			return saveToRepository(userFolder);
 		} else {
-			for(int index = 0; index < filePathArray.length; index++) {
-				System.out.println(index);
-				System.out.println(filePathArray[index]);
+			//Upload To Inner Directory
+			Optional<FolderModel> folderToSaveAt = navigatoToPath(filePathArray, userFolder.getFolders());
+			if(!folderToSaveAt.isPresent()) {
+				return new ResponseEntity<>("{error: Folder Path Does Not Exist}", HttpStatus.NOT_FOUND);
 			}
+			FolderModel folderToSaveAtFound = folderToSaveAt.get();
+			if(doesFileExist(fileName, folderToSaveAtFound.getFiles())) {
+				return new ResponseEntity<>("{error: File Already Exists}", HttpStatus.CONFLICT);
+			}
+			folderToSaveAtFound.setFiles(fileModel);
+			return saveToRepository(userFolder);
 		}
-		
-		
-		//ToDo- Method to Add Files
-		return new ResponseEntity<>("To Do", HttpStatus.NOT_FOUND);
 	}
 	
 	@PostMapping("/addFolder")

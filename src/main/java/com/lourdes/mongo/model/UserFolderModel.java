@@ -1,6 +1,8 @@
 package com.lourdes.mongo.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.springframework.data.annotation.Id;
@@ -20,9 +22,6 @@ public class UserFolderModel {
 	
 	public String getId() {
 		return id;
-	}
-	public void setId(String id) {
-		this.id = id;
 	}
 	public String getUserName() {
 		return userName;
@@ -74,5 +73,27 @@ public class UserFolderModel {
 	}
 	public void setFolders(FolderModel folder) {
 		this.folders.add(folder);
+	}
+	
+	public boolean deleteFolder(String[] folderPathArray) {
+		int iteration = 0;
+		boolean isFound = false;
+		LinkedList<String> folderPathList = new LinkedList<String>(Arrays.asList(folderPathArray)); 
+		for(; iteration < getFolders().size(); iteration++) {
+			if(getFolders().get(iteration).folderName.equals(folderPathList.get(1))) {
+				isFound = true;
+				break;
+			}
+		}
+		if(isFound) {
+			if(folderPathList.size() > 2) {
+				folderPathList.remove(0);
+				return getFolders().get(iteration).deleteFolder(folderPathList);
+			} else {
+				getFolders().remove(iteration);
+				return true;
+			}
+		}
+		return isFound;
 	}
 }

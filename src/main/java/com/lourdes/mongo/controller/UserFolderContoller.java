@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,6 +28,16 @@ public class UserFolderContoller {
 	public ResponseEntity<?> getAllUsers() {
 		List<UserFolderModel> allUsers = userFolderRepository.findAll();
 		return new ResponseEntity<>(allUsers, HttpStatus.OK);
+	}
+	
+	@GetMapping("/Users/{userName}")
+	public ResponseEntity<?> getUserWithUserName(@PathVariable("userName") String userName) {
+		Optional<UserFolderModel> userModelOptional = getUserWithName(userName);
+		if (!userModelOptional.isPresent()) {
+			return new ResponseEntity<>("{}", HttpStatus.OK);
+		}
+		UserFolderModel userModel = userModelOptional.get();
+		return new ResponseEntity<>(userModel, HttpStatus.OK);
 	}
 	
 	@PostMapping("/Users")
@@ -61,6 +72,7 @@ public class UserFolderContoller {
 		fileModel.setFileName(fileName);
 		fileModel.setFileType(fileType);
 		fileModel.setFileUrl(fileUrl);
+		fileModel.setId(createIdentifier(filePath, fileName));
 		String[] filePathArray = filePath.split("/");
 		
 		Optional<UserFolderModel> userFolderOptional = getUserWithName(userName);
@@ -97,8 +109,11 @@ public class UserFolderContoller {
 		String userName = addFileObjectNode.get("userName").asText();
 		String folderName = addFileObjectNode.get("folderName").asText();
 		String folderPath = addFileObjectNode.get("folderPath").asText();
+		
 		FolderModel folderModel = new FolderModel();
 		folderModel.setFolderName(folderName);
+		folderModel.setId(createIdentifier(folderPath, folderName));
+		
 		String[] filePathArray = folderPath.split("/");
 		
 		Optional<UserFolderModel> userFolderOptional = getUserWithName(userName);
@@ -128,6 +143,33 @@ public class UserFolderContoller {
 			folderToSaveAtFound.setFolders(folderModel);
 			return saveToRepository(userFolder);
 		}
+	}
+	
+	@DeleteMapping("/deleteFolder")
+	public ResponseEntity<?> deleteFolder(@RequestBody ObjectNode deleteFolderObjectNode) {
+		String userName = deleteFolderObjectNode.get("userName").asText();
+		String folderName = deleteFolderObjectNode.get("folderName").asText();
+		String folderPath = deleteFolderObjectNode.get("folderPath").asText();
+		String[] filePathArray = createIdentifier(folderPath, folderName).split("/");
+
+		Optional<UserFolderModel> userFolderOptional = getUserWithName(userName);
+		if (!userFolderOptional.isPresent()) {
+			return new ResponseEntity<>("{error: User Not Found}", HttpStatus.NOT_FOUND);
+		}
+		
+		UserFolderModel userFolder = userFolderOptional.get();
+		userFolder.deleteFolder(filePathArray);
+		return saveToRepository(userFolder);
+	}
+	
+	private String createIdentifier(String path, String fileOrFolderName) {
+		if ((path.charAt(path.length()-1)) == '/') {
+			path = path.concat(fileOrFolderName);
+		} else {
+			path = path.concat("/");
+			path = path.concat(fileOrFolderName);
+		}
+		return path;
 	}
 	
 	private Optional<FolderModel> navigatoToPath(String[] filePathArray, List<FolderModel> homeFolder) {
@@ -184,15 +226,5 @@ public class UserFolderContoller {
 			}
 		}
 		return false;
-	}
-	
-	@GetMapping("/Users/{userName}")
-	public ResponseEntity<?> getUserWithUserName(@PathVariable("userName") String userName) {
-		Optional<UserFolderModel> userModelOptional = getUserWithName(userName);
-		if (!userModelOptional.isPresent()) {
-			return new ResponseEntity<>("{}", HttpStatus.OK);
-		}
-		UserFolderModel userModel = userModelOptional.get();
-		return new ResponseEntity<>(userModel, HttpStatus.OK);
 	}
 }

@@ -131,15 +131,26 @@ public class UserFolderContoller {
 			//Upload In Inner Directory
 			List<FolderModel> folderList = userFolder.getFolders();
 			Optional<FolderModel> folderToSaveAt= Optional.empty();
-			for(int index = 0; index < filePathArray.length; index++) {
-				folderToSaveAt = getFolderWithName(folderName, folderList);
+			for(int index = 0; index < filePathArray.length-1; index++) {
+				folderToSaveAt = getFolderWithName(filePathArray[index+1], folderList);
+				if(folderToSaveAt.isPresent()) {
+					folderList = folderToSaveAt.get().getFolders();
+				}
 			}
 			if(!folderToSaveAt.isPresent()) {
 				return new ResponseEntity<>("{error: Folder Path Does Not Exist}", HttpStatus.NOT_FOUND);
 			}
 			FolderModel folderToSaveAtFound = folderToSaveAt.get();
+			if(doesFolderExist(folderName, folderToSaveAtFound.getFolders())) {
+				return new ResponseEntity<>("{error: Folder Already Exists}", HttpStatus.CONFLICT);
+			}
 			folderToSaveAtFound.setFolders(folderModel);
-			return new ResponseEntity<>(userFolder, HttpStatus.OK);
+			try {
+				userFolderRepository.save(userFolder);
+				return new ResponseEntity<>(userFolder, HttpStatus.OK);
+			} catch(Exception exception) {
+				return new ResponseEntity<>(exception.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+			}
 		}
 	}
 	

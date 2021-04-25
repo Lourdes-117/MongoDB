@@ -65,4 +65,32 @@ public class FolderModel {
 		}
 		return isFound;
 	}
+	
+	public boolean deleteFile(LinkedList<String> filePathList) {
+		int iteration = 0;
+		boolean isFound = false;
+		if(filePathList.size() > 2) {
+			for(; iteration < getFolders().size(); iteration++) {
+				if(getFolders().get(iteration).folderName.equals(filePathList.get(1))) {
+					isFound = true;
+					break;
+				}
+			}
+			if(isFound) {
+				filePathList.remove(0);
+				return getFolders().get(iteration).deleteFile(filePathList);
+			}
+		} else {
+			for(; iteration < getFiles().size(); iteration++) {
+				if(getFiles().get(iteration).getFileName().equals(filePathList.get(1))) {
+					isFound = true;
+					break;
+				}
+			}
+			if (isFound) {
+				getFiles().remove(iteration);
+			}
+		}
+		return isFound;
+	}
 }

@@ -162,6 +162,23 @@ public class UserFolderContoller {
 		return saveToRepository(userFolder);
 	}
 	
+	@DeleteMapping("/deleteFile")
+	public ResponseEntity<?> deleteFile(@RequestBody ObjectNode deleteFolderObjectNode) {
+		String userName = deleteFolderObjectNode.get("userName").asText();
+		String fileName = deleteFolderObjectNode.get("fileName").asText();
+		String filePath = deleteFolderObjectNode.get("filePath").asText();
+		String[] filePathArray = createIdentifier(filePath, fileName).split("/");
+
+		Optional<UserFolderModel> userFolderOptional = getUserWithName(userName);
+		if (!userFolderOptional.isPresent()) {
+			return new ResponseEntity<>("{error: User Not Found}", HttpStatus.NOT_FOUND);
+		}
+		
+		UserFolderModel userFolder = userFolderOptional.get();
+		userFolder.deleteFile(filePathArray);
+		return saveToRepository(userFolder);
+	}
+	
 	private String createIdentifier(String path, String fileOrFolderName) {
 		if ((path.charAt(path.length()-1)) == '/') {
 			path = path.concat(fileOrFolderName);

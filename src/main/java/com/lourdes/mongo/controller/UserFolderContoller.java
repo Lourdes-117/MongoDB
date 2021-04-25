@@ -128,15 +128,28 @@ public class UserFolderContoller {
 				return new ResponseEntity<>(exception.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 		} else {
+			//Upload In Inner Directory
+			List<FolderModel> folderList = userFolder.getFolders();
+			Optional<FolderModel> folderToSaveAt= Optional.empty();
 			for(int index = 0; index < filePathArray.length; index++) {
-				System.out.println(index);
-				System.out.println(filePathArray[index]);
+				folderToSaveAt = getFolderWithName(folderName, folderList);
+			}
+			if(!folderToSaveAt.isPresent()) {
+				return new ResponseEntity<>("{error: Folder Path Does Not Exist}", HttpStatus.NOT_FOUND);
+			}
+			FolderModel folderToSaveAtFound = folderToSaveAt.get();
+			folderToSaveAtFound.setFolders(folderModel);
+			return new ResponseEntity<>(userFolder, HttpStatus.OK);
+		}
+	}
+	
+	private Optional<FolderModel> getFolderWithName(String folderName, List<FolderModel> folders) {
+		for(int iteration = 0; iteration < folders.size(); iteration++) {
+			if (folderName.equals(folders.get(iteration).getFolderName())) {
+				return Optional.of(folders.get(iteration));
 			}
 		}
-		
-		
-		//ToDo- Method to Add Folder
-		return new ResponseEntity<>("To Do", HttpStatus.NOT_FOUND);
+		return Optional.empty();
 	}
 	
 	private Optional<UserFolderModel> getUserWithName(String userName) {
